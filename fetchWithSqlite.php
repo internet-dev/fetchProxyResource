@@ -45,16 +45,6 @@ class fetchWithSqlite extends fetchProxyResource
         }
     }
 
-    public function check($ip, $port)
-    {
-        echo __METHOD__ . "\n";
-    }
-
-    public function export($file_name)
-    {
-        echo __METHOD__ . "\n";
-    }
-
     protected function write($ip, $port, $ext)
     {
         $signature = md5("{$ip}:{$port}");
@@ -66,11 +56,13 @@ class fetchWithSqlite extends fetchProxyResource
         $c_sql  = "SELECT COUNT(`signature`) AS total FROM `{$this->db_table}` ";
         $c_sql .= "WHERE `signature` = '{$signature}'";
         $res_obj = $this->db->query($c_sql);
-        $row = $res_obj->fetchArray();
+        $row = $res_obj->fetchArray(SQLITE3_ASSOC);
         if (is_array($row) && isset($row['total']) && $row['total'] > 0)
         {
+            /** use logger TODO */
             $log = "{$ip}:{$port} ext='{$ext}' exist already .";
             echo $log . "\n";
+
             return true;
         }
 
@@ -78,7 +70,7 @@ class fetchWithSqlite extends fetchProxyResource
         $sql .= "'{$signature}', ";
         $sql .= "'{$ip}', {$port}, ";
         $sql .= "{$time_now}, {$time_now}, ";
-        $sql .= "0, '{$ext}'";
+        $sql .= sprintf("%d, '{$ext}'", FWS_PROXY_STATUS_NEW);
         $sql .= ');';
 
         $ret = $this->db->query($sql);
@@ -89,10 +81,43 @@ class fetchWithSqlite extends fetchProxyResource
 
         return true;
     }
+
+    protected function getPrepareResource()
+    {
+        $prepare_resoure = array();
+        echo __METHOD__ . "\n";
+        /** 5 天内可用的不再检查 */
+        $sql  = "SELECT * FROM `{$this->db_table}` ";
+        $sql .= sprintf('WHERE `status` !=  %d ', FWS_PROXY_STATUS_AVAILABLE);
+        $sql .= sprintf('OR (`status` =  %d AND `last_check_time` < %d)',
+            FWS_PROXY_STATUS_AVAILABLE,
+            time() - FPR_CHECK_TIME_INTERVAL);
+        //echo $sql . "\n";
+
+        $res_obj = $this->db->query($sql);
+        while ($row = $res_obj->fetchArray(SQLITE3_ASSOC))
+        {
+            $prepare_resoure[] = $row;
+        }
+
+        //print_r($prepare_resoure);
+        return $prepare_resoure;
+    }
+
+    protected function updateResource($ip, $port, $check_info)
+    {
+        echo __METHOD__ . "\n";
+    }
+
+    public function export($file_name)
+    {
+        echo __METHOD__ . "\n";
+    }
 }
 
 // test case
 $fs = new fetchWithSqlite();
-$fs->fetch();
+//$fs->fetch();
+$fs->check();
 //$fs->check('127.0.1', '90');
 //$fs->export('/tmp');

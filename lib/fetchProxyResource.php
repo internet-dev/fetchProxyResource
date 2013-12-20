@@ -16,6 +16,7 @@ define('FPR_FETCH_RETRY_TIMES',     3);
 define('FPR_CHECK_TIME_INTERVAL',   5 * 3600 * 24);
 // 完成一个页面后的睡眠时间
 define('FPR_FETCH_SLEEP_TIME',      1);
+define('FPR_FETCH_HTTP_OK',         200);
 
 /**
  * 抽象类,将公用的代码进行封装
@@ -94,6 +95,58 @@ abstract class fetchProxyResource
     }
 
     /**
+     * @brief check 检测代理可用性接口,被动调用
+     *
+     * @return: viod
+     */
+    public function check()
+    {
+        echo __METHOD__ . "\n";
+        $this->getPrepareResource();
+        $this->updateResource($ip, $port, $check_info);
+    }
+
+
+    /**
+     * @brief ping 专 ping 百度,查看返回的状态码
+     *
+     * @param: $ip
+     * @param: $port
+     *
+     * @return: bool true: 代理可以ping百度; false: 尝了三次仍然失败
+     */
+    private function _ping($ip, $port)
+    {
+        $http_conf = array(
+            'proxy'      => true,
+            'proxy_host' => $ip,
+            'proxy_port' => $port,
+        );
+
+        $retry = FPR_FETCH_RETRY_TIMES;
+        while ($retry > 0)
+        {
+            $curl_tool = new curlTools($http_conf);
+            $ping_url  = 'http://www.baidu.com/';
+            $html = $curl_tool->get($ping_url);
+
+            $http_info = $curl_tool->getInfo();
+
+            if (is_array($http_info) && isset($http_conf['after'])
+                && isset($http_conf['after']['http_code'])
+                && FPR_FETCH_HTTP_OK == $http_conf['after']['http_code'])
+            {
+                return true;
+            }
+
+            sleep(FPR_FETCH_SLEEP_TIME * 1.2 + $retry);
+            --$retry;
+        }
+
+        return false;
+    }
+
+    /**
      * @brief write 受保护方法
      *
      * @param: $ip
@@ -105,16 +158,28 @@ abstract class fetchProxyResource
     abstract protected function write($ip, $port, $ext);
 
     /**
-     * @brief check 检测代理可用性接口,被动调用
+     * @brief getPrepareResource 取待处理的代理资源
+     *
+     * @return: array() 返回结果集,每条结果必须包括:
+     *      ip: 代理 ip
+     *      port: 商品号
+     */
+    abstract protected function getPrepareResource();
+
+    /**
+     * @brief updateResource 更新代理资源的可用状态
      *
      * @param: $ip
      * @param: $port
+     * @param: (array)$status
+     *      status 检查后的可用状态 1: 可用; 0: 不可用
+     *      last_check_time
      *
      * @return: bool
      */
-    abstract public function check($ip, $port);
+    abstract protected function updateResource($ip, $port, $check_info);
 
-    /**
+     /**
      * @brief export 将可用的代理资源导出为文本
      *
      * @param: $file_name
