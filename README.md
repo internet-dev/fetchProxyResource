@@ -1,0 +1,4 @@
+fetchProxyResource
+==================
+
+fetch proxy resource
