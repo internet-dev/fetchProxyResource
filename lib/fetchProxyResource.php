@@ -30,7 +30,14 @@ abstract class fetchProxyResource
      * */
     public function fetch()
     {
+        /** 可抓取,但大部分 ip 不可用 */
         $this->_fetchCnproxy();
+
+        /** 2013.12.23 goodips 网站不可用 */
+        //$this->_fetchGoodips();
+
+        /** 可用,貌似数据每天有更新 */
+        $this->_fetchXici();
     }
 
     private function _fetchCnproxy()
@@ -57,7 +64,8 @@ abstract class fetchProxyResource
             $html_dom->load($html);
             $trs = $html_dom->find('table tr');
 
-            for ($i = 2; $i < count($trs); $i++)
+            $total = count($trs);
+            for ($i = 2; $i < $total; $i++)
             {
                 $text = $trs[$i]->children(0)->innertext;
                 $text = preg_replace('/<script type=text\/javascript>document\.write\(":"\+([+rqvcamlbiw]+)\)<\/script>/', ':$1', $text);
@@ -88,9 +96,95 @@ abstract class fetchProxyResource
 
             /** 为了防止短时间访问太频繁,抓完一个页面后睡眠 */
             sleep(FPR_FETCH_SLEEP_TIME);
+        }
+    }
 
-            // debug
-            break;
+    private function _fetchGoodips()
+    {
+        $goodips = array(
+            'http://www.goodips.com/index.html?pageid=1',
+            'http://www.goodips.com/index.html?pageid=2',
+            'http://www.goodips.com/index.html?pageid=3',
+            'http://www.goodips.com/index.html?pageid=4',
+            'http://www.goodips.com/index.html?pageid=5',
+            'http://www.goodips.com/index.html?pageid=6',
+            'http://www.goodips.com/index.html?pageid=7',
+            'http://www.goodips.com/index.html?pageid=8',
+            'http://www.goodips.com/index.html?pageid=9',
+            'http://www.goodips.com/index.html?pageid=10'
+        );
+
+        foreach ($goodips as $url)
+        {
+            $curl_tool = new curlTools();
+            $html_dom  = new simple_html_dom();
+            $html = $curl_tool->get($url);
+            //debug($html, __METHOD__, 1);
+
+            $html_dom->load($html);
+            $items = $html_dom->find('table tr');
+
+            $total = count($items);
+            for($j = 1; $j <= $total - 1; $j++)
+            {
+                $ip   = $items[$j]->children(0)->innertext;
+                $port = $items[$j]->children(1)->innertext;
+
+                $ext = array(
+                    'source' => 'goodips.com',
+                );
+                $this->write($ip, $port, $ext);
+            }
+
+            $html_dom->clear();
+
+            /** 销毁对象 */
+            $html_dom  = NULL;
+            $curl_tool = NULL;
+
+            /** 为了防止短时间访问太频繁,抓完一个页面后睡眠 */
+            sleep(FPR_FETCH_SLEEP_TIME);
+        }
+    }
+
+    private function _fetchXici()
+    {
+        $xici = array(
+            'http://www.xici.net.co/nn/1',
+            'http://www.xici.net.co/nn/2',
+            'http://www.xici.net.co/nn/3'
+        );
+
+        foreach ($xici as $url)
+        {
+            $curl_tool = new curlTools();
+            $html_dom  = new simple_html_dom();
+            $html = $curl_tool->get($url);
+            //debug($html, __METHOD__);
+
+            $html_dom->load($html);
+            $items = $html_dom->find('tr');
+
+            $total = count($items);
+            for($j = 1; $j <= $total - 1; $j++)
+            {
+                $ip   = $items[$j]->children(1)->innertext;
+                $port = $items[$j]->children(2)->innertext;
+
+                $ext = array(
+                    'source' => 'xici.net.co',
+                );
+                $this->write($ip, $port, $ext);
+            }
+
+            $html_dom->clear();
+
+            /** 销毁对象 */
+            $html_dom  = NULL;
+            $curl_tool = NULL;
+
+            /** 为了防止短时间访问太频繁,抓完一个页面后睡眠 */
+            sleep(FPR_FETCH_SLEEP_TIME);
         }
     }
 
@@ -152,7 +246,7 @@ abstract class fetchProxyResource
                 return true;
             }
 
-            //usleep((int)(FPR_FETCH_SLEEP_TIME * 0.1 + $retry));
+            usleep((int)(FPR_FETCH_SLEEP_TIME * 0.1 + $retry));
             --$retry;
         }
 
