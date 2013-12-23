@@ -31,9 +31,9 @@ class curlTools
         //客户端 USERAGENT,如:"Mozilla/4.0",为空则使用用户的浏览器
         'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36',
         //连接超时时间
-        'connect_timeout_ms' => 2000,
+        'connect_timeout_ms' => 3000,
         // read timeout
-        'read_timeout_ms'    => 3000,
+        'read_timeout_ms'    => 60000,
         //是否使用 COOKIE 建议打开，因为一般网站都会用到
         'use_cookie' => false,
         //是否支持SSL
@@ -44,11 +44,11 @@ class curlTools
         //是否使用代理
         'proxy' => false,
         //代理类型,可选择 HTTP 或 SOCKS5
-        'proxy_type'  =>' HTTP',
+        'proxy_type'  => 'HTTP',
         //代理的主机地址
         'proxy_host'  => '',
         //代理主机的端口
-        'proxy_port' => null,
+        'proxy_port' => 80,
         //代理是否要身份认证(HTTP方式时)
         'proxy_auth' => false,
         //认证的方式.可选择 BASIC 或 NTLM 方式
@@ -72,7 +72,8 @@ class curlTools
         function_exists('curl_init') || die("CURL Library Not Loaded\n");
 
         $this->ch = curl_init();     // 初始化
-        curl_setopt($this->ch, CURLOPT_PORT, $this->setopt['port']);  // 设置CURL连接的端口
+        // 设置CURL连接的端口
+        curl_setopt($this->ch, CURLOPT_PORT, $this->setopt['port']);
 
         //使用代理
         if ($this->setopt['proxy'])
@@ -91,6 +92,7 @@ class curlTools
                 curl_setopt($this->ch, CURLOPT_PROXYUSERPWD, $user);
             }
         }
+        curl_setopt($this->ch, CURLOPT_HTTPHEADER, array('X-FORWARDED-FOR:8.8.8.8', 'CLIENT-IP:8.8.8.8'));
 
         //启用时会将服务器服务器返回的 "Location:" 放在header中递归的返回给服务器
         curl_setopt($this->ch, CURLOPT_FOLLOWLOCATION, true);
