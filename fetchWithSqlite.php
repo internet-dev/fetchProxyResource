@@ -54,6 +54,26 @@ class fetchWithSqlite extends fetchProxyResource
     public function export($file_name)
     {
         echo __METHOD__ . "\n";
+        /** format: {ip}\t{port}\t{proxy_type[默认为 HTTP]}\t{source}\n */
+        $sql = sprintf("SELECT * FROM `{$this->db_table}` WHERE status = %d", FWS_PROXY_STATUS_AVAILABLE);
+        //debug($sql, __METHOD__ . ' SQL');
+        $ret_obj = $this->db->query($sql);
+        while ($row = $ret_obj->fetchArray(SQLITE3_ASSOC))
+        {
+            $ext = json_decode($row['ext'], true);
+
+            $text  = "{$row['ip']}\t{$row['port']}\t";
+
+            $text .= (isset($ext['proxy_type']) ? strtoupper($ext['proxy_type']) : 'HTTP');
+            $text .= "\t";
+
+            $text .= (isset($ext['source']) ? $ext['source'] : '');
+            $text .= "\n";
+
+            file_put_contents($file_name, $text, FILE_APPEND);
+        }
+
+        return;
     }
 
     protected function write($ip, $port, $ext)
@@ -144,6 +164,7 @@ class fetchWithSqlite extends fetchProxyResource
         //debug($sql, 'update sql', 1);
         $this->db->query($sql);
 
+        /** TODO use logger */
         echo "UPDATE for [{$ip}:{$port}] status: {$status}\n";
 
         return;
@@ -174,10 +195,10 @@ class fetchWithSqlite extends fetchProxyResource
 }
 
 // test case
-$fs = new fetchWithSqlite();
+//$fs = new fetchWithSqlite();
 //$fs->fetch();
 //$fs->check();
-//$fs->export('/tmp');
+//$fs->export('/tmp/p.txt');
 
 /**
 $config = array(

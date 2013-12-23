@@ -133,6 +133,7 @@ abstract class fetchProxyResource
             'proxy_host' => $ip,
             'proxy_port' => $port,
         );
+        /** 如果有 HTTPS 的代理,放入到 $ext 中 TODO */
 
         $retry = FPR_FETCH_RETRY_TIMES;
         while ($retry > 0)
@@ -196,7 +197,7 @@ abstract class fetchProxyResource
      *
      * @param: $file_name
      *
-     * @return: bool
+     * @return: void
      */
     abstract public function export($file_name);
 }
