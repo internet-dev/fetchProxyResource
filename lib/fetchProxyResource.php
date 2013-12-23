@@ -101,9 +101,20 @@ abstract class fetchProxyResource
      */
     public function check()
     {
-        echo __METHOD__ . "\n";
-        $this->getPrepareResource();
-        $this->updateResource($ip, $port, $check_info);
+        $prepare_resoure = $this->getPrepareResource();
+        foreach ($prepare_resoure as $source)
+        {
+            $last_check_time = time();
+            $ping_ret = $this->_ping($source['ip'], $source['port'], $source['ext']);
+
+            $check_info = array(
+                'last_check_time' => $last_check_time,
+                'status' => $ping_ret,
+            );
+            $this->updateResource($source['ip'], $source['port'], $check_info);
+        }
+
+        return;
     }
 
 
@@ -115,7 +126,7 @@ abstract class fetchProxyResource
      *
      * @return: bool true: 代理可以ping百度; false: 尝了三次仍然失败
      */
-    private function _ping($ip, $port)
+    private function _ping($ip, $port, $ext = array())
     {
         $http_conf = array(
             'proxy'      => true,
@@ -131,6 +142,7 @@ abstract class fetchProxyResource
             $html = $curl_tool->get($ping_url);
 
             $http_info = $curl_tool->getInfo();
+            //print_r($http_info);exit();
 
             if (is_array($http_info) && isset($http_conf['after'])
                 && isset($http_conf['after']['http_code'])
@@ -139,7 +151,7 @@ abstract class fetchProxyResource
                 return true;
             }
 
-            sleep(FPR_FETCH_SLEEP_TIME * 1.2 + $retry);
+            //usleep((int)(FPR_FETCH_SLEEP_TIME * 0.1 + $retry));
             --$retry;
         }
 
@@ -175,7 +187,7 @@ abstract class fetchProxyResource
      *      status 检查后的可用状态 1: 可用; 0: 不可用
      *      last_check_time
      *
-     * @return: bool
+     * @return: void
      */
     abstract protected function updateResource($ip, $port, $check_info);
 
@@ -187,4 +199,36 @@ abstract class fetchProxyResource
      * @return: bool
      */
     abstract public function export($file_name);
+}
+
+$sapi_type = php_sapi_name();
+if ('cli' == $sapi_type)
+{
+    define('LCRT', "\n");
+    define('DEBUG_SAPI', 0);
+}
+else
+{
+    define('LCRT', '<br />');
+    define('DEBUG_SAPI', 1);
+}
+
+function debug($arry, $alias = '', $exit = false)
+{
+    $output = ($alias ? $alias .' =  ' : '') . print_r($arry, true);
+
+    if (DEBUG_SAPI)
+    {
+        $output = '<pre>' . $output . '</pre>' . LCRT;
+    }
+    else
+    {
+        $output .= LCRT;
+    }
+    echo $output;
+
+    if ($exit)
+    {
+        exit;
+    }
 }
