@@ -29,7 +29,7 @@ class curlTools
         //访问的端口,http默认是 80
         'port' => 80,
         //客户端 USERAGENT,如:"Mozilla/4.0",为空则使用用户的浏览器
-        'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36',
+        'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36',
         //连接超时时间
         'connect_timeout_ms' => 3000,
         // read timeout
