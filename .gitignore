@@ -20,10 +20,15 @@ a.out
 tags
 
 # other
-data
+#data
 doc
 acsmx
 acmf
 test
 nohup.out
 gunittest
+data/model_file
+data/output_file
+data/ssq.txt.bak
+data/svm-org
+data/test_file
