@@ -29,9 +29,9 @@ nohup.out
 gunittest
 # some tmp file
 data/model_file
-data/output_file
+data/output_file.*
 data/ssq.txt.bak
 data/svm-org
-data/test_file
-lucky
-tmp_output
+data/test_file.*
+lucky.*
+tmp_output.*

@@ -4,7 +4,7 @@
 
 #set -x
 
-# 预计处理原始数据,生成 svm 向量机能识别的数据格式
+# 预处理原始数据,生成 svm 向量机能识别的数据格式
 awk -F "\t" '{
     split($1, date_array, "-");
     date = date_array[1] date_array[2] date_array[3];
